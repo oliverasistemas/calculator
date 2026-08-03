@@ -1,0 +1,14 @@
+.idea
+.env
+.env.*
+
+# Claude Code per-machine settings and the temp files it writes beside them.
+.claude/settings.local.json
+.claude/settings.local.json.tmp.*
+
+# Compiled Go binaries
+/services/api/api
+
+# Frontend
+app-web/node_modules
+app-web/dist

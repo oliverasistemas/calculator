@@ -1,0 +1,167 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+}
+
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* Calculator card */
+.calculator {
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+}
+
+.calculator .ant-card-body {
+  padding: 24px;
+}
+
+/* Display */
+.display {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #062c50;
+  border-radius: 12px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.display-expression {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  min-height: 20px;
+  word-break: break-all;
+}
+
+.display-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 36px;
+  font-weight: 600;
+  color: #fff;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+.display-error {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* Keypad grid */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.key {
+  height: 56px;
+  font-size: 18px;
+  font-weight: 500;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.key-fn {
+  background: #e8ebed;
+  border-color: #e8ebed;
+  color: #333;
+}
+.key-fn:hover {
+  background: #d4d7da !important;
+  border-color: #d4d7da !important;
+}
+
+.key-op {
+  background: #018da2;
+  border-color: #018da2;
+  color: #fff;
+}
+.key-op:hover {
+  background: #017a8c !important;
+  border-color: #017a8c !important;
+  color: #fff !important;
+}
+
+.key-active {
+  background: #fff !important;
+  color: #018da2 !important;
+  border: 2px solid #018da2 !important;
+}
+
+.key-equals {
+  font-size: 20px;
+}
+
+/* History */
+.history {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.history-clear {
+  cursor: pointer;
+  font-size: 12px;
+}
+.history-clear:hover {
+  color: #018da2 !important;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0 !important;
+}
+
+.history-result {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+/* Responsive */
+@media (max-width: 420px) {
+  .calculator {
+    max-width: 100%;
+  }
+
+  .calculator .ant-card-body {
+    padding: 16px;
+  }
+
+  .display-value {
+    font-size: 28px;
+  }
+
+  .key {
+    height: 48px;
+    font-size: 16px;
+  }
+}
