@@ -2,7 +2,6 @@ package calculator
 
 import (
 	"errors"
-	"math"
 	"testing"
 )
 
@@ -18,16 +17,17 @@ func TestCalculate(t *testing.T) {
 		{"add negative", Request{Operation: Add, A: ptr(-2), B: ptr(-3)}, -5},
 		{"add mixed", Request{Operation: Add, A: ptr(-2), B: ptr(3)}, 1},
 		{"add zero", Request{Operation: Add, A: ptr(0), B: ptr(0)}, 0},
-		{"add decimals", Request{Operation: Add, A: ptr(0.1), B: ptr(0.2)}, 0.30000000000000004},
+		{"add decimals", Request{Operation: Add, A: ptr(0.1), B: ptr(0.2)}, 0.3},
 		{"subtract", Request{Operation: Subtract, A: ptr(10), B: ptr(4)}, 6},
 		{"multiply", Request{Operation: Multiply, A: ptr(3), B: ptr(7)}, 21},
 		{"multiply large", Request{Operation: Multiply, A: ptr(1e15), B: ptr(1e15)}, 1e30},
+		{"multiply exact integer beyond 12 digits", Request{Operation: Multiply, A: ptr(9999999), B: ptr(9999999)}, 99999980000001},
 		{"divide", Request{Operation: Divide, A: ptr(10), B: ptr(4)}, 2.5},
 		{"power", Request{Operation: Power, A: ptr(2), B: ptr(8)}, 256},
 		{"power zero exponent", Request{Operation: Power, A: ptr(5), B: ptr(0)}, 1},
 		{"sqrt", Request{Operation: Sqrt, A: ptr(16)}, 4},
 		{"sqrt zero", Request{Operation: Sqrt, A: ptr(0)}, 0},
-		{"sqrt irrational", Request{Operation: Sqrt, A: ptr(2)}, math.Sqrt(2)},
+		{"sqrt irrational", Request{Operation: Sqrt, A: ptr(2)}, 1.41421356237},
 		{"percentage", Request{Operation: Percentage, A: ptr(25), B: ptr(200)}, 50},
 	}
 	for _, tt := range tests {

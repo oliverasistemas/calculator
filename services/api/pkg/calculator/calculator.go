@@ -64,6 +64,7 @@ func Calculate(req Request) (*Result, error) {
 	if math.IsNaN(res.Result) || math.IsInf(res.Result, 0) {
 		return nil, ErrNonFiniteResult
 	}
+	res.Result = roundTo12(res.Result)
 	return res, nil
 }
 
