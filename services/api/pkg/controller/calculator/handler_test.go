@@ -18,6 +18,7 @@ func TestCalculateEndpoint(t *testing.T) {
 		body       string
 		wantStatus int
 		wantResult *float64
+		wantExpr   string
 		wantError  string
 	}{
 		{
@@ -25,6 +26,7 @@ func TestCalculateEndpoint(t *testing.T) {
 			body:       `{"operation":"add","a":5,"b":3}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(8),
+			wantExpr:   "5 + 3",
 		},
 		{
 			name:       "divide by zero",
@@ -61,12 +63,26 @@ func TestCalculateEndpoint(t *testing.T) {
 			body:       `{"operation":"sqrt","a":25}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(5),
+			wantExpr:   "√25",
 		},
 		{
 			name:       "percentage",
 			body:       `{"operation":"percentage","a":10,"b":200}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(20),
+			wantExpr:   "10% of 200",
+		},
+		{
+			name:       "power producing NaN",
+			body:       `{"operation":"power","a":-1,"b":0.5}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantError:  "result is not a finite number",
+		},
+		{
+			name:       "multiply overflowing to Inf",
+			body:       `{"operation":"multiply","a":1e308,"b":10}`,
+			wantStatus: http.StatusUnprocessableEntity,
+			wantError:  "result is not a finite number",
 		},
 	}
 
@@ -84,13 +100,17 @@ func TestCalculateEndpoint(t *testing.T) {
 
 			if tt.wantResult != nil {
 				var resp struct {
-					Result float64 `json:"result"`
+					Result     float64 `json:"result"`
+					Expression string  `json:"expression"`
 				}
 				if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 					t.Fatalf("decode response: %v", err)
 				}
 				if resp.Result != *tt.wantResult {
 					t.Errorf("result = %v, want %v", resp.Result, *tt.wantResult)
+				}
+				if resp.Expression != tt.wantExpr {
+					t.Errorf("expression = %q, want %q", resp.Expression, tt.wantExpr)
 				}
 			}
 

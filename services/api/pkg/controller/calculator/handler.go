@@ -43,6 +43,8 @@ func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusUnprocessableEntity
 		case errors.Is(err, calc.ErrNegativeSqrt):
 			status = http.StatusUnprocessableEntity
+		case errors.Is(err, calc.ErrNonFiniteResult):
+			status = http.StatusUnprocessableEntity
 		case errors.Is(err, calc.ErrUnknownOperation):
 			status = http.StatusBadRequest
 		case errors.Is(err, calc.ErrMissingOperand):

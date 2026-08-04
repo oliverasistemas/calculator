@@ -6,10 +6,11 @@ import (
 )
 
 var (
-	ErrDivisionByZero    = errors.New("division by zero")
-	ErrNegativeSqrt      = errors.New("square root of negative number")
-	ErrUnknownOperation  = errors.New("unknown operation")
-	ErrMissingOperand    = errors.New("missing required operand")
+	ErrDivisionByZero   = errors.New("division by zero")
+	ErrNegativeSqrt     = errors.New("square root of negative number")
+	ErrUnknownOperation = errors.New("unknown operation")
+	ErrMissingOperand   = errors.New("missing required operand")
+	ErrNonFiniteResult  = errors.New("result is not a finite number")
 )
 
 type Operation string
@@ -42,18 +43,28 @@ func Calculate(req Request) (*Result, error) {
 
 	a := *req.A
 
+	var res *Result
+	var err error
 	switch req.Operation {
 	case Sqrt:
-		return sqrt(a)
+		res, err = sqrt(a)
 	case Add, Subtract, Multiply, Divide, Power, Percentage:
 		if req.B == nil {
 			return nil, ErrMissingOperand
 		}
-		b := *req.B
-		return binary(req.Operation, a, b)
+		res, err = binary(req.Operation, a, *req.B)
 	default:
 		return nil, ErrUnknownOperation
 	}
+	if err != nil {
+		return nil, err
+	}
+	// NaN and ±Inf are not representable in JSON; reject them here rather
+	// than letting response encoding fail after the status is written.
+	if math.IsNaN(res.Result) || math.IsInf(res.Result, 0) {
+		return nil, ErrNonFiniteResult
+	}
+	return res, nil
 }
 
 func binary(op Operation, a, b float64) (*Result, error) {
