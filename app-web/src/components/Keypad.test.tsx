@@ -67,4 +67,28 @@ describe("Keypad", () => {
     renderKeypad();
     expect(screen.getByText(".")).toBeInTheDocument();
   });
+
+  it("calls onOperation with the operation for operator buttons", () => {
+    const props = renderKeypad();
+    fireEvent.click(screen.getByText("÷"));
+    expect(props.onOperation).toHaveBeenCalledWith("divide");
+    fireEvent.click(screen.getByRole("button", { name: /plus/i }));
+    expect(props.onOperation).toHaveBeenCalledWith("add");
+    fireEvent.click(screen.getByText("√"));
+    expect(props.onOperation).toHaveBeenCalledWith("sqrt");
+  });
+
+  it("calls onBackspace when the delete button is clicked", () => {
+    const props = renderKeypad();
+    fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+    expect(props.onBackspace).toHaveBeenCalled();
+  });
+
+  it("highlights only the pending operator", () => {
+    renderKeypad({ pendingOp: "divide" });
+    expect(screen.getByText("÷").closest("button")).toHaveClass("key-active");
+    expect(screen.getByText("√").closest("button")).not.toHaveClass(
+      "key-active"
+    );
+  });
 });
