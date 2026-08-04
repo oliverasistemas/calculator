@@ -2,33 +2,50 @@
 
 Full-stack calculator application — React (TypeScript) frontend + Go REST API backend.
 
-## Architecture
+## Setup
 
-```
-app-web/          React SPA (Vite + Ant Design)
-services/api/     Go REST API (Chi router)
-Dockerfile        Multi-stage build (Go + Node + Caddy)
-```
-
-**Backend** — A single `POST /calculate` endpoint handles all operations. The core calculation logic lives in `pkg/calculator/` as a pure function with no dependencies, making it easy to test. The HTTP handler in `pkg/controller/calculator/` deals only with request parsing, error mapping, and JSON responses. Structured logging via `slog` is the only injected dependency.
-
-**Frontend** — A `useCalculator` hook manages all calculator state (operands, pending operation, display, history). It calls the backend API for every calculation so results are always server-authoritative. The UI is split into four components: `Calculator` (container), `Display`, `Keypad`, and `HistoryPanel`.
-
-### Design decisions
-
-- **Single endpoint** instead of one-per-operation (`/add`, `/subtract`, etc.) — fewer routes, one request/response contract, and the operation is just data in the payload. Adding a new operation means adding a case to the switch, not wiring up a new route.
-- **Vite over Next.js** — no SSR needed for a calculator. Vite gives a faster dev loop and simpler config.
-- **Ant Design** — provides accessible, responsive components out of the box so I could focus on logic instead of styling from scratch.
-- **Caddy in Docker** — serves the SPA static files and reverse-proxies `/api/*` to the Go binary, all in a single container. No nginx config files to maintain.
-- **Server-side calculation** — the frontend delegates all math to the API. This keeps the frontend thin and ensures a single source of truth for how operations behave.
-
-## Prerequisites
+### Prerequisites
 
 - Go 1.26+
 - Node.js 22+
 - Docker
 
-## Makefile
+### Install frontend dependencies
+
+```bash
+cd app-web
+npm install
+```
+
+The Go API has no setup step beyond having Go installed — dependencies are fetched on first `go run`.
+
+## Running the app
+
+**Backend** (runs on `:4000`):
+
+```bash
+cd services/api
+go run ./cmd
+```
+
+**Frontend** (runs on `:5173`, proxies API calls to `:4000`):
+
+```bash
+cd app-web
+npm run dev
+```
+
+Open http://localhost:5173.
+
+**With Docker** (runs everything on `:8080`):
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080.
+
+### Makefile
 
 Common tasks are available via `make`:
 
@@ -49,34 +66,7 @@ Common tasks are available via `make`:
 | `make up` | `docker compose up` |
 | `make down` | `docker compose down` |
 
-## Running locally
-
-**Backend** (runs on `:4000`):
-
-```bash
-cd services/api
-go run ./cmd
-```
-
-**Frontend** (runs on `:5173`, proxies API calls to `:4000`):
-
-```bash
-cd app-web
-npm install
-npm run dev
-```
-
-Open http://localhost:5173.
-
-**With Docker** (runs everything on `:8080`):
-
-```bash
-docker compose up --build
-```
-
-Open http://localhost:8080.
-
-## Running tests
+### Running tests
 
 ```bash
 # Go tests
@@ -86,7 +76,7 @@ cd services/api && go test ./...
 cd app-web && npm test
 ```
 
-### Coverage
+#### Coverage
 
 ```bash
 make coverage        # both layers
@@ -167,6 +157,26 @@ curl -X POST http://localhost:4000/calculate \
   -d '{"operation": "divide", "a": 1, "b": 0}'
 # {"error":"division by zero"}
 ```
+
+## Design decisions
+
+- **Single endpoint** instead of one-per-operation (`/add`, `/subtract`, etc.) — fewer routes, one request/response contract, and the operation is just data in the payload. Adding a new operation means adding a case to the switch, not wiring up a new route.
+- **Vite over Next.js** — no SSR needed for a calculator. Vite gives a faster dev loop and simpler config.
+- **Ant Design** — provides accessible, responsive components out of the box so I could focus on logic instead of styling from scratch.
+- **Caddy in Docker** — serves the SPA static files and reverse-proxies `/api/*` to the Go binary, all in a single container. No nginx config files to maintain.
+- **Server-side calculation** — the frontend delegates all math to the API. This keeps the frontend thin and ensures a single source of truth for how operations behave.
+
+### Architecture
+
+```
+app-web/          React SPA (Vite + Ant Design)
+services/api/     Go REST API (Chi router)
+Dockerfile        Multi-stage build (Go + Node + Caddy)
+```
+
+**Backend** — A single `POST /calculate` endpoint handles all operations. The core calculation logic lives in `pkg/calculator/` as a pure function with no dependencies, making it easy to test. The HTTP handler in `pkg/controller/calculator/` deals only with request parsing, error mapping, and JSON responses. Structured logging via `slog` is the only injected dependency.
+
+**Frontend** — A `useCalculator` hook manages all calculator state (operands, pending operation, display, history). It calls the backend API for every calculation so results are always server-authoritative. The UI is split into four components: `Calculator` (container), `Display`, `Keypad`, and `HistoryPanel`.
 
 ## Edge cases covered
 
