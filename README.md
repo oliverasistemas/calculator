@@ -168,6 +168,45 @@ curl -X POST http://localhost:4000/calculate \
 # {"error":"division by zero"}
 ```
 
+## Edge cases covered
+
+All of these are exercised by tests (`services/api/pkg/calculator/calculator_test.go`, `app-web/src/hooks/useCalculator.test.ts`).
+
+### Numeric precision (backend)
+
+Add, subtract, multiply, divide, and percentage are computed in **exact rational arithmetic** (`big.Rat`) — floats only enter when the result is formatted:
+
+- **No binary-float artifacts** — `0.1 + 0.2` returns `0.3`, not `0.30000000000000004`; `0.3 - 0.1` returns `0.2`.
+- **Catastrophic cancellation** — `1.0000000001 - 1` returns exactly `1e-10`.
+- **Operands beyond 2⁵³ survive** — operands are decoded from their literal JSON digits (never through `float64`), so `9007199254740993` stays `9007199254740993` instead of silently becoming `…992`.
+- **Exact integer powers** — integer exponents use `big.Int`, so `3 ^ 35 = 50031545098999707` and `2 ^ 100` are digit-for-digit exact where `math.Pow` would be off. Exponents over 4096 or bases over 256 bits fall back to floats to keep hostile requests from forcing huge allocations.
+- **Honest rounding** — non-terminating decimals round to 12 significant digits (`1 / 3 → 0.333333333333`); exact results longer than 50 digits round instead of printing rounding artifacts (`10 ^ 60 → 1e+60`).
+- **`resultText` is authoritative** — the response carries the result as a decimal string alongside the compatibility `result` float, because a `float64` cannot represent integers beyond 2⁵³. The frontend displays and chains from `resultText` verbatim.
+
+### Domain errors (422)
+
+- Division by zero, including `0` raised to a negative power.
+- Square root of a negative number (`√0` is fine; `0 ^ 0` returns `1`).
+- Non-finite results are rejected rather than breaking JSON encoding: `(-1) ^ 0.5` (NaN), `10 ^ 1000` and `1e308 × 10` (overflow to ±Inf).
+
+### Input validation (400)
+
+- Unknown operations and missing operands (`a` always, `b` for binary ops).
+- Malformed numbers rejected: `abc`, `1.2.3`, `1e`, `0x10`, `Inf`, `NaN`, `--5`, empty strings.
+- Calculator-display forms accepted and normalized: `5.`, `.5`, leading `+`.
+- Operand literals capped at 512 characters so hostile requests can't feed arbitrarily large rationals into the exact-arithmetic paths.
+
+### UI state (frontend)
+
+- Operands are kept and sent as **strings** — no `parseFloat` on the client, so chained results beyond 2⁵³ don't get corrupted between steps.
+- A second decimal point in the same number is ignored (`1.5.2` → `1.52`).
+- The leading `0` is replaced by the first digit typed; after a result, typing starts a fresh number.
+- Chaining: pressing a second operator (`5 + 3 ×`) computes the pending operation and carries the result forward; re-selecting an operator before typing just replaces the pending one without firing a request.
+- `=` with no pending operation is a no-op.
+- On API errors the display and history are kept, the error message is shown, and typing any digit clears it; network failures fall back to a generic message.
+- Backspace bottoms out at `0` and collapses a single negated digit (`-5` → `0`); toggle-sign leaves `0` alone.
+- `C` clears the current entry but keeps history; `AC` wipes both. History is capped at 50 entries.
+
 ## AI tooling
 
 This project was built with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Claude Opus). I used it for scaffolding components, writing tests, debugging edge cases, and iterating on the API design. All code was reviewed and understood before committing.
