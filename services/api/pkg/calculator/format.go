@@ -5,11 +5,14 @@ import (
 	"strconv"
 )
 
+// formatNum renders an operand for the expression string. Operands are
+// echoed at full precision — the expression must report what was actually
+// computed, never a rounded-for-display stand-in.
 func formatNum(n float64) string {
 	if n == math.Trunc(n) && !math.IsInf(n, 0) {
 		return strconv.FormatFloat(n, 'f', -1, 64)
 	}
-	return strconv.FormatFloat(roundTo12(n), 'g', -1, 64)
+	return strconv.FormatFloat(n, 'g', -1, 64)
 }
 
 // roundTo12 rounds n to 12 significant digits, absorbing binary float

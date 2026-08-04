@@ -18,10 +18,16 @@ func TestCalculate(t *testing.T) {
 		{"add mixed", Request{Operation: Add, A: ptr(-2), B: ptr(3)}, 1},
 		{"add zero", Request{Operation: Add, A: ptr(0), B: ptr(0)}, 0},
 		{"add decimals", Request{Operation: Add, A: ptr(0.1), B: ptr(0.2)}, 0.3},
+		{"add cancellation", Request{Operation: Add, A: ptr(1.0000001), B: ptr(-1)}, 1e-7},
 		{"subtract", Request{Operation: Subtract, A: ptr(10), B: ptr(4)}, 6},
+		{"subtract cancellation", Request{Operation: Subtract, A: ptr(1.0000001), B: ptr(1)}, 1e-7},
+		{"subtract deep cancellation", Request{Operation: Subtract, A: ptr(1.0000000001), B: ptr(1)}, 1e-10},
+		{"subtract decimals", Request{Operation: Subtract, A: ptr(0.3), B: ptr(0.1)}, 0.2},
 		{"multiply", Request{Operation: Multiply, A: ptr(3), B: ptr(7)}, 21},
 		{"multiply large", Request{Operation: Multiply, A: ptr(1e15), B: ptr(1e15)}, 1e30},
 		{"multiply exact integer beyond 12 digits", Request{Operation: Multiply, A: ptr(9999999), B: ptr(9999999)}, 99999980000001},
+		{"multiply beyond 12 significant digits", Request{Operation: Multiply, A: ptr(1.000000000001), B: ptr(1.000000000001)}, 1.000000000002},
+		{"multiply small decimals", Request{Operation: Multiply, A: ptr(0.1), B: ptr(0.2)}, 0.02},
 		{"divide", Request{Operation: Divide, A: ptr(10), B: ptr(4)}, 2.5},
 		{"power", Request{Operation: Power, A: ptr(2), B: ptr(8)}, 256},
 		{"power zero exponent", Request{Operation: Power, A: ptr(5), B: ptr(0)}, 1},
@@ -82,8 +88,9 @@ func TestExpressionFormatting(t *testing.T) {
 		{Request{Operation: Sqrt, A: ptr(16)}, "√16"},
 		{Request{Operation: Percentage, A: ptr(25), B: ptr(200)}, "25% of 200"},
 		{Request{Operation: Add, A: ptr(1e20), B: ptr(1)}, "100000000000000000000 + 1"},
-		{Request{Operation: Add, A: ptr(0.30000000000000004), B: ptr(5)}, "0.3 + 5"},
+		{Request{Operation: Add, A: ptr(0.30000000000000004), B: ptr(5)}, "0.30000000000000004 + 5"},
 		{Request{Operation: Multiply, A: ptr(0.1), B: ptr(0.2)}, "0.1 * 0.2"},
+		{Request{Operation: Multiply, A: ptr(1.000000000001), B: ptr(1.000000000001)}, "1.000000000001 * 1.000000000001"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {

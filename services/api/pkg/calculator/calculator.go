@@ -3,6 +3,8 @@ package calculator
 import (
 	"errors"
 	"math"
+	"math/big"
+	"strconv"
 )
 
 var (
@@ -64,7 +66,6 @@ func Calculate(req Request) (*Result, error) {
 	if math.IsNaN(res.Result) || math.IsInf(res.Result, 0) {
 		return nil, ErrNonFiniteResult
 	}
-	res.Result = roundTo12(res.Result)
 	return res, nil
 }
 
@@ -74,29 +75,63 @@ func binary(op Operation, a, b float64) (*Result, error) {
 
 	switch op {
 	case Add:
-		result = a + b
+		result = decimalExact(op, a, b)
 		expression = formatBinary(a, "+", b)
 	case Subtract:
-		result = a - b
+		result = decimalExact(op, a, b)
 		expression = formatBinary(a, "-", b)
 	case Multiply:
-		result = a * b
+		result = decimalExact(op, a, b)
 		expression = formatBinary(a, "*", b)
 	case Divide:
 		if b == 0 {
 			return nil, ErrDivisionByZero
 		}
-		result = a / b
+		result = roundTo12(a / b)
 		expression = formatBinary(a, "/", b)
 	case Power:
-		result = math.Pow(a, b)
+		result = roundTo12(math.Pow(a, b))
 		expression = formatBinary(a, "^", b)
 	case Percentage:
-		result = (a / 100) * b
+		result = roundTo12((a / 100) * b)
 		expression = formatNum(a) + "% of " + formatNum(b)
 	}
 
 	return &Result{Result: result, Expression: expression}, nil
+}
+
+// decimalExact computes a+b, a-b, or a*b in exact decimal arithmetic and
+// returns the nearest float64. Doing these in float64 leaks representation
+// error into the significant digits when operands cancel (1.0000001 - 1)
+// or when the true result carries more digits than a fixed rounding keeps
+// (1.000000000001²), so no after-the-fact rounding can recover the exact
+// answer. The operands' decimal values (their shortest decimal form) are
+// exact rationals, and add/subtract/multiply are closed over them.
+func decimalExact(op Operation, a, b float64) float64 {
+	ra, okA := new(big.Rat).SetString(strconv.FormatFloat(a, 'g', -1, 64))
+	rb, okB := new(big.Rat).SetString(strconv.FormatFloat(b, 'g', -1, 64))
+	if !okA || !okB {
+		switch op {
+		case Subtract:
+			return a - b
+		case Multiply:
+			return a * b
+		default:
+			return a + b
+		}
+	}
+
+	r := new(big.Rat)
+	switch op {
+	case Subtract:
+		r.Sub(ra, rb)
+	case Multiply:
+		r.Mul(ra, rb)
+	default:
+		r.Add(ra, rb)
+	}
+	f, _ := r.Float64()
+	return f
 }
 
 func sqrt(a float64) (*Result, error) {
@@ -104,7 +139,7 @@ func sqrt(a float64) (*Result, error) {
 		return nil, ErrNegativeSqrt
 	}
 	return &Result{
-		Result:     math.Sqrt(a),
+		Result:     roundTo12(math.Sqrt(a)),
 		Expression: "√" + formatNum(a),
 	}, nil
 }
