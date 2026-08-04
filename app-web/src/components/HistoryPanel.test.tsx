@@ -22,6 +22,17 @@ describe("HistoryPanel", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
   });
 
+  it("formats results with float artifacts", () => {
+    render(
+      <HistoryPanel
+        history={[{ expression: "0.1 + 0.2", result: 0.1 + 0.2 }]}
+        onClear={vi.fn()}
+      />
+    );
+    expect(screen.getByText("0.1 + 0.2 =")).toBeInTheDocument();
+    expect(screen.getByText("0.3")).toBeInTheDocument();
+  });
+
   it("calls onClear when Clear is clicked", () => {
     const onClear = vi.fn();
     render(

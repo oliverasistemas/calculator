@@ -1,5 +1,6 @@
 import { List, Typography } from "antd";
 import type { HistoryEntry } from "@/types/calculator";
+import { formatResult } from "@/utils/format";
 
 const { Text } = Typography;
 
@@ -30,7 +31,7 @@ export default function HistoryPanel({ history, onClear }: HistoryPanelProps) {
           <List.Item className="history-item">
             <Text type="secondary">{entry.expression} =</Text>
             <Text strong className="history-result">
-              {entry.result}
+              {formatResult(entry.result)}
             </Text>
           </List.Item>
         )}

@@ -82,6 +82,8 @@ func TestExpressionFormatting(t *testing.T) {
 		{Request{Operation: Sqrt, A: ptr(16)}, "√16"},
 		{Request{Operation: Percentage, A: ptr(25), B: ptr(200)}, "25% of 200"},
 		{Request{Operation: Add, A: ptr(1e20), B: ptr(1)}, "100000000000000000000 + 1"},
+		{Request{Operation: Add, A: ptr(0.30000000000000004), B: ptr(5)}, "0.3 + 5"},
+		{Request{Operation: Multiply, A: ptr(0.1), B: ptr(0.2)}, "0.1 * 0.2"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {

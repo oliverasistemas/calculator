@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { api, ApiError } from "@/api/client";
+import { formatResult } from "@/utils/format";
 import type {
   Operation,
   CalculateRequest,
@@ -159,12 +160,4 @@ export function useCalculator() {
     toggleSign,
     backspace,
   };
-}
-
-function formatResult(n: number): string {
-  if (Number.isInteger(n) && Math.abs(n) < 1e15) {
-    return n.toString();
-  }
-  const s = n.toPrecision(12);
-  return parseFloat(s).toString();
 }
