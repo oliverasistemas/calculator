@@ -18,6 +18,7 @@ func TestCalculateEndpoint(t *testing.T) {
 		body       string
 		wantStatus int
 		wantResult *float64
+		wantText   string
 		wantExpr   string
 		wantError  string
 	}{
@@ -26,7 +27,38 @@ func TestCalculateEndpoint(t *testing.T) {
 			body:       `{"operation":"add","a":5,"b":3}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(8),
+			wantText:   "8",
 			wantExpr:   "5 + 3",
+		},
+		{
+			name:       "string operands",
+			body:       `{"operation":"add","a":"5","b":"3"}`,
+			wantStatus: http.StatusOK,
+			wantResult: ptr(8),
+			wantText:   "8",
+			wantExpr:   "5 + 3",
+		},
+		{
+			name:       "power beyond 2^53 returns exact digits",
+			body:       `{"operation":"power","a":3,"b":35}`,
+			wantStatus: http.StatusOK,
+			wantResult: ptr(50031545098999704), // nearest float64; the truth is in resultText
+			wantText:   "50031545098999707",
+			wantExpr:   "3 ^ 35",
+		},
+		{
+			name:       "integer operand beyond 2^53 is not altered by parsing",
+			body:       `{"operation":"add","a":9007199254740993,"b":0}`,
+			wantStatus: http.StatusOK,
+			wantResult: ptr(9007199254740992),
+			wantText:   "9007199254740993",
+			wantExpr:   "9007199254740993 + 0",
+		},
+		{
+			name:       "malformed number operand",
+			body:       `{"operation":"add","a":"abc","b":3}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "invalid JSON body",
 		},
 		{
 			name:       "divide by zero",
@@ -63,6 +95,7 @@ func TestCalculateEndpoint(t *testing.T) {
 			body:       `{"operation":"sqrt","a":25}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(5),
+			wantText:   "5",
 			wantExpr:   "√25",
 		},
 		{
@@ -70,6 +103,7 @@ func TestCalculateEndpoint(t *testing.T) {
 			body:       `{"operation":"percentage","a":10,"b":200}`,
 			wantStatus: http.StatusOK,
 			wantResult: ptr(20),
+			wantText:   "20",
 			wantExpr:   "10% of 200",
 		},
 		{
@@ -101,6 +135,7 @@ func TestCalculateEndpoint(t *testing.T) {
 			if tt.wantResult != nil {
 				var resp struct {
 					Result     float64 `json:"result"`
+					ResultText string  `json:"resultText"`
 					Expression string  `json:"expression"`
 				}
 				if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
@@ -108,6 +143,9 @@ func TestCalculateEndpoint(t *testing.T) {
 				}
 				if resp.Result != *tt.wantResult {
 					t.Errorf("result = %v, want %v", resp.Result, *tt.wantResult)
+				}
+				if resp.ResultText != tt.wantText {
+					t.Errorf("resultText = %q, want %q", resp.ResultText, tt.wantText)
 				}
 				if resp.Expression != tt.wantExpr {
 					t.Errorf("expression = %q, want %q", resp.Expression, tt.wantExpr)

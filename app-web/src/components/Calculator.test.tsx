@@ -21,7 +21,7 @@ describe("Calculator", () => {
   });
 
   it("performs a calculation end to end through the keypad", async () => {
-    mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+    mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
     const { container } = render(<Calculator />);
 
     fireEvent.click(screen.getByText("5"));
@@ -34,8 +34,8 @@ describe("Calculator", () => {
     });
     expect(mockPost).toHaveBeenCalledWith("/calculate", {
       operation: "add",
-      a: 5,
-      b: 3,
+      a: "5",
+      b: "3",
     });
     expect(displayExpression(container)).toHaveTextContent("5 + 3");
   });
@@ -56,7 +56,7 @@ describe("Calculator", () => {
   });
 
   it("adds results to the history panel and AC clears them", async () => {
-    mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+    mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
     render(<Calculator />);
 
     fireEvent.click(screen.getByText("5"));

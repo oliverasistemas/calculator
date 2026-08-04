@@ -12,8 +12,8 @@ describe("HistoryPanel", () => {
 
   it("renders history entries", () => {
     const history = [
-      { expression: "5 + 3", result: 8 },
-      { expression: "10 / 2", result: 5 },
+      { expression: "5 + 3", result: "8" },
+      { expression: "10 / 2", result: "5" },
     ];
     render(<HistoryPanel history={history} onClear={vi.fn()} />);
     expect(screen.getByText("5 + 3 =")).toBeInTheDocument();
@@ -22,22 +22,22 @@ describe("HistoryPanel", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
   });
 
-  it("formats results with float artifacts", () => {
+  it("renders result strings verbatim, including digits beyond float64", () => {
     render(
       <HistoryPanel
-        history={[{ expression: "0.1 + 0.2", result: 0.1 + 0.2 }]}
+        history={[{ expression: "3 ^ 35", result: "50031545098999707" }]}
         onClear={vi.fn()}
       />
     );
-    expect(screen.getByText("0.1 + 0.2 =")).toBeInTheDocument();
-    expect(screen.getByText("0.3")).toBeInTheDocument();
+    expect(screen.getByText("3 ^ 35 =")).toBeInTheDocument();
+    expect(screen.getByText("50031545098999707")).toBeInTheDocument();
   });
 
   it("calls onClear when Clear is clicked", () => {
     const onClear = vi.fn();
     render(
       <HistoryPanel
-        history={[{ expression: "1 + 1", result: 2 }]}
+        history={[{ expression: "1 + 1", result: "2" }]}
         onClear={onClear}
       />
     );
@@ -48,7 +48,7 @@ describe("HistoryPanel", () => {
   it("shows History header", () => {
     render(
       <HistoryPanel
-        history={[{ expression: "1 + 1", result: 2 }]}
+        history={[{ expression: "1 + 1", result: "2" }]}
         onClear={vi.fn()}
       />
     );

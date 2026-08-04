@@ -48,7 +48,7 @@ describe("useCalculator", () => {
     });
 
     it("starts a fresh number after a result", async () => {
-      mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+      mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
       const { result } = renderHook(() => useCalculator());
       typeDigits(result, "5");
       act(() => result.current.setOperation("add"));
@@ -63,7 +63,7 @@ describe("useCalculator", () => {
 
   describe("binary operations", () => {
     it("sends the operation to the API and shows the result", async () => {
-      mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+      mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
       const { result } = renderHook(() => useCalculator());
 
       typeDigits(result, "5");
@@ -74,19 +74,19 @@ describe("useCalculator", () => {
 
       expect(mockPost).toHaveBeenCalledWith("/calculate", {
         operation: "add",
-        a: 5,
-        b: 3,
+        a: "5",
+        b: "3",
       });
       expect(result.current.display).toBe("8");
       expect(result.current.expression).toBe("5 + 3");
       expect(result.current.history).toEqual([
-        { expression: "5 + 3", result: 8 },
+        { expression: "5 + 3", result: "8" },
       ]);
       expect(result.current.pendingOp).toBeNull();
     });
 
     it("chains operations, using the intermediate result as the next operand", async () => {
-      mockPost.mockResolvedValueOnce({ result: 8, expression: "5 + 3" });
+      mockPost.mockResolvedValueOnce({ result: 8, resultText: "8", expression: "5 + 3" });
       const { result } = renderHook(() => useCalculator());
 
       typeDigits(result, "5");
@@ -97,20 +97,20 @@ describe("useCalculator", () => {
 
       expect(mockPost).toHaveBeenCalledWith("/calculate", {
         operation: "add",
-        a: 5,
-        b: 3,
+        a: "5",
+        b: "3",
       });
       expect(result.current.display).toBe("8");
       expect(result.current.pendingOp).toBe("multiply");
 
-      mockPost.mockResolvedValueOnce({ result: 16, expression: "8 × 2" });
+      mockPost.mockResolvedValueOnce({ result: 16, resultText: "16", expression: "8 × 2" });
       typeDigits(result, "2");
       await act(async () => result.current.calculate());
 
       expect(mockPost).toHaveBeenLastCalledWith("/calculate", {
         operation: "multiply",
-        a: 8,
-        b: 2,
+        a: "8",
+        b: "2",
       });
       expect(result.current.display).toBe("16");
       expect(result.current.history).toHaveLength(2);
@@ -134,7 +134,7 @@ describe("useCalculator", () => {
   });
 
   it("sqrt fires immediately without a second operand", async () => {
-    mockPost.mockResolvedValue({ result: 4, expression: "√16" });
+    mockPost.mockResolvedValue({ result: 4, resultText: "4", expression: "√16" });
     const { result } = renderHook(() => useCalculator());
 
     typeDigits(result, "16");
@@ -142,7 +142,7 @@ describe("useCalculator", () => {
 
     expect(mockPost).toHaveBeenCalledWith("/calculate", {
       operation: "sqrt",
-      a: 16,
+      a: "16",
     });
     expect(result.current.display).toBe("4");
   });
@@ -192,7 +192,7 @@ describe("useCalculator", () => {
 
   describe("clear", () => {
     it("clear resets the display but keeps history", async () => {
-      mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+      mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
       const { result } = renderHook(() => useCalculator());
 
       typeDigits(result, "5");
@@ -207,7 +207,7 @@ describe("useCalculator", () => {
     });
 
     it("clearAll also wipes history", async () => {
-      mockPost.mockResolvedValue({ result: 8, expression: "5 + 3" });
+      mockPost.mockResolvedValue({ result: 8, resultText: "8", expression: "5 + 3" });
       const { result } = renderHook(() => useCalculator());
 
       typeDigits(result, "5");
@@ -256,10 +256,11 @@ describe("useCalculator", () => {
     });
   });
 
-  describe("result formatting", () => {
-    it("trims floating-point noise", async () => {
+  describe("result display", () => {
+    it("shows the backend's resultText verbatim", async () => {
       mockPost.mockResolvedValue({
-        result: 0.30000000000000004,
+        result: 0.3,
+        resultText: "0.3",
         expression: "0.1 + 0.2",
       });
       const { result } = renderHook(() => useCalculator());
@@ -272,16 +273,24 @@ describe("useCalculator", () => {
       expect(result.current.display).toBe("0.3");
     });
 
-    it("shows integers without a decimal part", async () => {
-      mockPost.mockResolvedValue({ result: 100, expression: "10 ^ 2" });
+    it("preserves digits beyond float64 precision from resultText", async () => {
+      // 3^35: the float64 `result` is off by 3; resultText is exact.
+      mockPost.mockResolvedValue({
+        result: 50031545098999704,
+        resultText: "50031545098999707",
+        expression: "3 ^ 35",
+      });
       const { result } = renderHook(() => useCalculator());
 
-      typeDigits(result, "10");
+      typeDigits(result, "3");
       act(() => result.current.setOperation("power"));
-      typeDigits(result, "2");
+      typeDigits(result, "35");
       await act(async () => result.current.calculate());
 
-      expect(result.current.display).toBe("100");
+      expect(result.current.display).toBe("50031545098999707");
+      expect(result.current.history).toEqual([
+        { expression: "3 ^ 35", result: "50031545098999707" },
+      ]);
     });
   });
 });

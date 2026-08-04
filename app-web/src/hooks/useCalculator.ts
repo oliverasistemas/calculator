@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { api, ApiError } from "@/api/client";
-import { formatResult } from "@/utils/format";
 import type {
   Operation,
   CalculateRequest,
@@ -28,7 +27,9 @@ const UNARY_OPS = new Set<Operation>(["sqrt"]);
 
 export function useCalculator() {
   const [state, setState] = useState<CalculatorState>(INITIAL_STATE);
-  const [firstOperand, setFirstOperand] = useState<number | null>(null);
+  // Operands are kept and sent as strings — parseFloat would corrupt
+  // results beyond 2^53 when chaining (see CalculateRequest).
+  const [firstOperand, setFirstOperand] = useState<string | null>(null);
   const [pendingOp, setPendingOp] = useState<Operation | null>(null);
   const [resetOnNext, setResetOnNext] = useState(false);
 
@@ -48,12 +49,11 @@ export function useCalculator() {
   const setOperation = useCallback(
     (op: Operation) => {
       if (UNARY_OPS.has(op)) {
-        const a = parseFloat(state.display);
-        performCalculation(op, a);
+        performCalculation(op, state.display);
         return;
       }
 
-      const current = parseFloat(state.display);
+      const current = state.display;
 
       if (firstOperand !== null && pendingOp && !resetOnNext) {
         performCalculation(pendingOp, firstOperand, current, op);
@@ -68,14 +68,13 @@ export function useCalculator() {
 
   const calculate = useCallback(() => {
     if (firstOperand === null || !pendingOp) return;
-    const b = parseFloat(state.display);
-    performCalculation(pendingOp, firstOperand, b);
+    performCalculation(pendingOp, firstOperand, state.display);
   }, [firstOperand, pendingOp, state.display]);
 
   const performCalculation = async (
     op: Operation,
-    a: number,
-    b?: number,
+    a: string,
+    b?: string,
     nextOp?: Operation
   ) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -87,17 +86,17 @@ export function useCalculator() {
       const result = await api.post<CalculateResult>("/calculate", body);
       setState((prev) => ({
         ...prev,
-        display: formatResult(result.result),
+        display: result.resultText,
         expression: result.expression,
         history: [
-          { expression: result.expression, result: result.result },
+          { expression: result.expression, result: result.resultText },
           ...prev.history,
         ].slice(0, 50),
         loading: false,
       }));
 
       if (nextOp) {
-        setFirstOperand(result.result);
+        setFirstOperand(result.resultText);
         setPendingOp(nextOp);
         setResetOnNext(true);
       } else {
