@@ -1,4 +1,4 @@
-.PHONY: dev-api dev-web test-api test-web test vet lint check build up down
+.PHONY: dev-api dev-web test-api test-web test coverage-api coverage-web coverage vet lint check build up down
 
 dev-api:
 	cd services/api && go run ./cmd
@@ -13,6 +13,14 @@ test-web:
 	cd app-web && npm test
 
 test: test-api test-web
+
+coverage-api:
+	cd services/api && go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+
+coverage-web:
+	cd app-web && npx vitest run --coverage
+
+coverage: coverage-api coverage-web
 
 vet:
 	cd services/api && go vet ./...

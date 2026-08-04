@@ -39,6 +39,9 @@ Common tasks are available via `make`:
 | `make test-api` | Run Go tests |
 | `make test-web` | Run frontend tests |
 | `make test` | Run all tests |
+| `make coverage-api` | Go tests with per-function coverage report |
+| `make coverage-web` | Frontend tests with coverage report |
+| `make coverage` | Both coverage reports |
 | `make vet` | Run `go vet` |
 | `make lint` | Run `golangci-lint` |
 | `make check` | Run vet + lint + all tests |
@@ -82,6 +85,27 @@ cd services/api && go test ./...
 # Frontend tests
 cd app-web && npm test
 ```
+
+### Coverage
+
+```bash
+make coverage        # both layers
+make coverage-api    # Go: writes services/api/coverage.out + prints per-function summary
+make coverage-web    # frontend: vitest --coverage (v8), prints per-file table
+```
+
+For an HTML view of the Go report: `cd services/api && go tool cover -html=coverage.out`.
+
+Current numbers:
+
+| Layer | Coverage | Notes |
+|-------|----------|-------|
+| Go — `pkg/calculator` | 100% | All operations, error paths, and expression formatting |
+| Go — `pkg/controller/calculator` | 96% | HTTP handler; uncovered lines are the JSON-encode failure branch |
+| Go — total | 55% | Remainder is wiring (`main`, router, config, logging middleware) with no branching logic |
+| Frontend — `useCalculator` hook | 100% | All state logic: digit entry, chaining, unary ops, errors, clear/backspace, result formatting |
+| Frontend — components | 74% | `Display`, `Keypad`, `HistoryPanel` fully covered; `Calculator` container is wiring only |
+| Frontend — total | 74% | Remaining gap is the API client's fetch wrapper and app-mount wiring |
 
 ## API
 
@@ -147,3 +171,5 @@ curl -X POST http://localhost:4000/calculate \
 ## AI tooling
 
 This project was built with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Claude Opus). I used it for scaffolding components, writing tests, debugging edge cases, and iterating on the API design. All code was reviewed and understood before committing.
+
+The prompts used are collected in [PROMPTS.md](PROMPTS.md).

@@ -12,3 +12,8 @@
 # Frontend
 app-web/node_modules
 app-web/dist
+app-web/*.tsbuildinfo
+
+# Coverage output
+services/api/coverage.out
+app-web/coverage/
