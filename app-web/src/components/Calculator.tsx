@@ -23,7 +23,7 @@ export default function Calculator() {
 
   return (
     <Spin spinning={loading} size="small">
-      <Card className="calculator" bordered={false}>
+      <Card className="calculator" variant="borderless">
         <Display value={display} expression={expression} error={error} />
         <Keypad
           onDigit={appendDigit}

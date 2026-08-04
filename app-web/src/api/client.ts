@@ -32,11 +32,20 @@ async function request<T>(
       },
     });
 
-    const data = response.status === 204 ? null : await response.json();
+    let data: unknown = null;
+    if (response.status !== 204) {
+      try {
+        data = await response.json();
+      } catch (err) {
+        // error responses may have empty or non-JSON bodies; still raise ApiError
+        if (response.ok) throw err;
+      }
+    }
 
     if (!response.ok) {
+      const body = (data ?? {}) as { error?: string; message?: string };
       throw new ApiError(
-        data.error || data.message || "Request failed",
+        body.error || body.message || "Request failed",
         response.status,
         data
       );

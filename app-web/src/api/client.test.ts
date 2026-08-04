@@ -79,6 +79,33 @@ describe("api client", () => {
     await expect(api.post("/calculate")).rejects.toThrow("Request failed");
   });
 
+  it("throws a status-coded ApiError when the error body is not JSON", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: () => Promise.reject(new SyntaxError("Unexpected token <")),
+    });
+
+    const err = await api
+      .post<never>("/calculate")
+      .catch((e: unknown) => e as ApiError);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.message).toBe("Request failed");
+    expect(err.status).toBe(502);
+    expect(err.data).toBeNull();
+  });
+
+  it("propagates a parse error when a successful response has a malformed body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new SyntaxError("Unexpected end of JSON input")),
+    });
+
+    await expect(api.post("/calculate")).rejects.toThrow(SyntaxError);
+  });
+
   it("aborts the request after the 30s timeout", async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementation(
