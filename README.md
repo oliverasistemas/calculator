@@ -26,7 +26,7 @@ Dockerfile        Multi-stage build (Go + Node + Caddy)
 
 - Go 1.26+
 - Node.js 22+
-- Or just Docker
+- Docker
 
 ## Makefile
 
